@@ -5,9 +5,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen)
 ![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-
 一个基于 Spring Boot 和 WebSocket 技术的现代化局域网文件传输系统
-
 [功能特点](#功能特点) • [快速开始](#快速开始) • [技术架构](#技术架构) • [使用指南](#使用指南) • [开发文档](#开发文档)
 
 </div>
