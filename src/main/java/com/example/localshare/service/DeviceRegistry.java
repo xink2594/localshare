@@ -56,11 +56,13 @@ public class DeviceRegistry {
     public List<DeviceInfo> getAllDevices() {
         return new ArrayList<>(onlineDevices.values());
     }
-    
+
+    //  广播设备列表
     public void broadcastDeviceList() {
+        //  获取所有设备
         List<DeviceInfo> devices = getAllDevices();
-        
-        // Create a simplified list for broadcasting (without session objects)
+
+        // 创建简化的设备列表，排除ws会话对象
         List<DeviceInfo> simplifiedDevices = new ArrayList<>();
         for (DeviceInfo device : devices) {
             DeviceInfo simplified = new DeviceInfo();
@@ -68,7 +70,8 @@ public class DeviceRegistry {
             simplified.setDeviceName(device.getDeviceName());
             simplifiedDevices.add(simplified);
         }
-        
+
+        // 构造设备列表消息
         FileTransferMessage message = new FileTransferMessage();
         message.setType("device_list");
         message.setDeviceList(simplifiedDevices);
@@ -76,7 +79,8 @@ public class DeviceRegistry {
         try {
             String jsonMessage = objectMapper.writeValueAsString(message);
             TextMessage textMessage = new TextMessage(jsonMessage);
-            
+
+            // 遍历所有设备，发送消息
             for (DeviceInfo device : devices) {
                 WebSocketSession session = device.getSession();
                 if (session != null && session.isOpen()) {

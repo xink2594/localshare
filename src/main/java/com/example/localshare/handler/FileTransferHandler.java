@@ -30,7 +30,7 @@ public class FileTransferHandler extends AbstractWebSocketHandler {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    // Map to track file transfer sessions
+    // Map to track file transfer sessions 存储文件传输会话信息
     private final Map<String, Map<String, Object>> fileTransfers = new ConcurrentHashMap<>();
     
     // 存储已使用的设备名称
