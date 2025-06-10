@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalShare - P2P文件传输</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #3498db;
+            text-align: center;
+        }
+        .device-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #eaf2f8;
+            border-radius: 5px;
+            position: relative;
+        }
+        .info-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 24px;
+            height: 24px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-style: italic;
+            font-weight: bold;
+            font-family: serif;
+        }
+        .info-tooltip {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+            width: 220px;
+            display: none;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .info-tooltip:after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            border-width: 0 10px 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent #2c3e50 transparent;
+        }
+        .device-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2980b9;
+            padding: 5px 10px;
+            background-color: #d6eaf8;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .device-list {
+            margin-bottom: 20px;
+        }
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+        }
+        .device-item button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+        .file-transfer {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #eaf2f8;
+            border-radius: 5px;
+            display: none;
+        }
+        .notification {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+            transition: top 0.5s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            min-width: 200px;
+            text-align: center;
+        }
+        .progress-container {
+            margin-top: 10px;
+        }
+        progress {
+            width: 100%;
+            height: 20px;
+        }
+        .transfer-request {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9e79f;
+            border-radius: 5px;
+            display: none;
+        }
+        .transfer-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            cursor: pointer;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+        }
+        #send-button {
+            background-color: #27ae60;
+            color: white;
+            font-size: 1.1em;
+            padding: 10px 20px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #send-button:hover {
+            background-color: #2ecc71;
+            box-shadow: 0 3px 7px rgba(0,0,0,0.3);
+        }
+        .icon {
+            display: inline-block;
+            margin-right: 5px;
+            font-family: Arial, sans-serif;
+        }
+        .refresh-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+            transition: transform 0.3s;
+        }
+        .refresh-button:hover {
+            background-color: #2980b9;
+            transform: rotate(180deg);
+        }
+        .device-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .accept-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .reject-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .file-input {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .file-input input[type="file"] {
+            padding: 8px;
+            border: 1px dashed #3498db;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LocalShare 文件传输</h1>
+        
+        <div class="device-info">
+            <h2>我的设备</h2>
+            <div class="info-icon" id="info-icon">i
+                <div class="info-tooltip" id="info-tooltip">
+                    <p>IP地址: <span id="ip-address">获取中...</span></p>
+                    <p>WebSocket端口: <span id="ws-port">获取中...</span></p>
+                    <p>连接地址: <span id="full-address">获取中...</span></p>
+                </div>
+            </div>
+            <p>设备ID: <span id="device-id" style="font-family: monospace;">连接中...</span></p>
+            <p>设备名称: <span id="device-name" class="device-name">连接中...</span></p>
+            <p>连接状态: <span id="connection-status">连接中...</span></p>
+        </div>
+        
+        <div class="device-list">
+            <div class="device-list-header">
+                <h2>可用设备</h2>
+                <button class="refresh-button" id="refresh-button" title="刷新设备列表">↻</button>
+            </div>
+            <div id="devices-container">
+                <p>正在搜索设备...</p>
+            </div>
+        </div>
+        
+        <div id="file-transfer" class="file-transfer">
+            <h2>发送文件到 <span id="target-device-name" class="device-name"></span></h2>
+            <div class="file-input">
+                <input type="file" id="file-input">
+                <button id="send-button"><span class="icon">📤</span> 发送文件</button>
+            </div>
+            
+            <div id="progress-container" class="progress-container" style="display:none;">
+                <h3>传输进度</h3>
+                <progress id="progress-bar" value="0" max="100"></progress>
+                <p><span id="progress-percent">0%</span> - <span id="transfer-speed">0 KB/s</span></p>
+            </div>
+        </div>
+        
+        <div id="transfer-request" class="transfer-request">
+            <h2>文件传输请求</h2>
+            <p>来自: <span id="source-device-name" class="device-name"></span></p>
+            <p>文件: <span id="file-name"></span> (<span id="file-size"></span>)</p>
+            
+            <div class="transfer-actions">
+                <button id="accept-button" class="accept-btn">接受</button>
+                <button id="reject-button" class="reject-btn">拒绝</button>
+            </div>
+            
+            <div id="receiver-progress" class="progress-container" style="display:none;">
+                <h3>接收进度</h3>
+                <progress id="receiver-bar" value="0" max="100"></progress>
+                <p><span id="receiver-percent">0%</span> - <span id="receiver-speed">0 KB/s</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        // 常量
+        const CHUNK_SIZE = 1024 * 1024; // 1MB 分片
+        
+        // 变量
+        let socket;
+        let deviceId = '';
+        let deviceName = '';
+        let targetDeviceId = '';
+        let targetDeviceName = '';
+        let currentTransferId = '';
+        let selectedFile = null;
+        let receivingFile = null;
+        let receivedChunks = [];
+        let receivedSize = 0;
+        let totalSize = 0;
+        let transferStartTime = 0;
+        let reconnectAttempts = 0;
+        let reconnectTimer = null;
+        let maxReconnectAttempts = 10;
+        
+        // DOM 元素
+        const deviceIdElement = document.getElementById('device-id');
+        const deviceNameElement = document.getElementById('device-name');
+        const statusElement = document.getElementById('connection-status');
+        const devicesContainer = document.getElementById('devices-container');
+        const fileTransferElement = document.getElementById('file-transfer');
+        const targetDeviceNameElement = document.getElementById('target-device-name');
+        const fileInput = document.getElementById('file-input');
+        const sendButton = document.getElementById('send-button');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        const transferSpeed = document.getElementById('transfer-speed');
+        const transferRequestElement = document.getElementById('transfer-request');
+        const sourceDeviceNameElement = document.getElementById('source-device-name');
+        const fileNameElement = document.getElementById('file-name');
+        const fileSizeElement = document.getElementById('file-size');
+        const acceptButton = document.getElementById('accept-button');
+        const rejectButton = document.getElementById('reject-button');
+        const receiverProgressElement = document.getElementById('receiver-progress');
+        const receiverBar = document.getElementById('receiver-bar');
+        const receiverPercent = document.getElementById('receiver-percent');
+        const receiverSpeed = document.getElementById('receiver-speed');
+        const notificationElement = document.getElementById('notification');
+        
+        // 初始化 WebSocket
+        function initWebSocket() {
+            // 清除之前的重连定时器
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/file-transfer`;
+            
+            try {
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = () => {
+                    statusElement.textContent = '已连接';
+                    statusElement.style.color = 'green';
+                    showNotification('已连接到服务器');
+                    // 重置重连计数
+                    reconnectAttempts = 0;
+                };
+                
+                socket.onclose = () => {
+                    statusElement.textContent = '已断开连接';
+                    statusElement.style.color = 'red';
+                    
+                    // 指数退避重连策略
+                    reconnectAttempts++;
+                    const delay = Math.min(5000 * Math.pow(1.5, reconnectAttempts - 1), 60000);
+                    
+                    if (reconnectAttempts <= maxReconnectAttempts) {
+                        showNotification(`已断开连接，${Math.round(delay/1000)}秒后尝试重连...（${reconnectAttempts}/${maxReconnectAttempts}）`);
+                        
+                        // 设置重连定时器
+                        reconnectTimer = setTimeout(() => {
+                            showNotification(`正在尝试重新连接...（${reconnectAttempts}/${maxReconnectAttempts}）`);
+                            initWebSocket();
+                        }, delay);
+                    } else {
+                        showNotification('重连次数已达上限，请刷新页面重试');
+                    }
+                };
+                
+                socket.onerror = (error) => {
+                    console.error('WebSocket 错误:', error);
+                    statusElement.textContent = '连接错误';
+                    statusElement.style.color = 'red';
+                };
+                
+                socket.onmessage = handleMessage;
+            } catch (error) {
+                console.error('WebSocket 初始化错误:', error);
+                statusElement.textContent = '连接失败';
+                statusElement.style.color = 'red';
+                
+                // 尝试重连
+                reconnectAttempts++;
+                const delay = Math.min(5000 * Math.pow(1.5, reconnectAttempts - 1), 60000);
+                
+                if (reconnectAttempts <= maxReconnectAttempts) {
+                    showNotification(`连接失败，${Math.round(delay/1000)}秒后尝试重连...（${reconnectAttempts}/${maxReconnectAttempts}）`);
+                    reconnectTimer = setTimeout(initWebSocket, delay);
+                } else {
+                    showNotification('重连次数已达上限，请刷新页面重试');
+                }
+            }
+        }
+        
+        // 处理 WebSocket 消息
+        function handleMessage(event) {
+            if (event.data instanceof Blob) {
+                // 二进制数据 - 文件分片
+                handleBinaryMessage(event.data);
+            } else {
+                // 文本数据 - JSON 消息
+                handleTextMessage(event.data);
+            }
+        }
+        
+        // 处理文本消息
+        function handleTextMessage(data) {
+            const message = JSON.parse(data);
+            console.log('收到消息:', message);
+            
+            switch (message.type) {
+                case 'device_info':
+                    deviceId = message.deviceId;
+                    deviceName = message.deviceName;
+                    deviceIdElement.textContent = deviceId;
+                    deviceNameElement.textContent = deviceName;
+                    break;
+                    
+                case 'device_list':
+                    updateDeviceList(message.deviceList);
+                    break;
+                    
+                case 'transfer_request':
+                    handleTransferRequest(message);
+                    break;
+                    
+                case 'transfer_response':
+                    handleTransferResponse(message);
+                    break;
+                    
+                case 'file_metadata':
+                    handleFileMetadata(message);
+                    break;
+                    
+                case 'transfer_error':
+                    handleTransferError(message);
+                    break;
+                    
+                default:
+                    console.log('未知消息类型:', message.type);
+            }
+        }
+        
+        // 处理二进制消息
+        function handleBinaryMessage(blob) {
+            if (!receivingFile) return;
+            
+            receivedChunks.push(blob);
+            receivedSize += blob.size;
+            
+            // 更新进度
+            const progress = Math.round((receivedSize / totalSize) * 100);
+            receiverBar.value = progress;
+            receiverPercent.textContent = `${progress}%`;
+            
+            // 计算速度
+            const elapsedTime = (Date.now() - transferStartTime) / 1000;
+            const speedBps = receivedSize / elapsedTime;
+            receiverSpeed.textContent = formatSpeed(speedBps);
+            
+            // 如果传输完成
+            if (receivedSize >= totalSize) {
+                completeFileReceive();
+            }
+        }
+        
+        // 更新设备列表
+        function updateDeviceList(devices) {
+            if (!devices || devices.length === 0) {
+                devicesContainer.innerHTML = '<p>没有找到设备</p>';
+                return;
+            }
+            
+            let html = '';
+            devices.forEach(device => {
+                // 排除自己的设备
+                if (device.deviceId === deviceId) return;
+                
+                html += `
+                    <div class="device-item">
+                        <span class="device-name">${device.deviceName}</span>
+                        <button onclick="selectDevice('${device.deviceId}', '${device.deviceName}')">选择</button>
+                    </div>
+                `;
+            });
+            
+            if (html === '') {
+                devicesContainer.innerHTML = '<p>没有找到其他设备</p>';
+            } else {
+                devicesContainer.innerHTML = html;
+            }
+        }
+        
+        // 选择设备
+        function selectDevice(id, name) {
+            targetDeviceId = id;
+            targetDeviceName = name;
+            
+            targetDeviceNameElement.textContent = name;
+            fileTransferElement.style.display = 'block';
+            
+            showNotification(`已选择设备: ${name}`);
+        }
+        
+        // 发送文件传输请求
+        function sendFileTransferRequest() {
+            if (!selectedFile || !targetDeviceId) {
+                showNotification('请选择文件和目标设备');
+                return;
+            }
+            
+            const message = {
+                type: 'request_transfer',
+                targetDeviceId: targetDeviceId,
+                fileName: selectedFile.name,
+                fileSize: selectedFile.size,
+                fileType: selectedFile.type
+            };
+            
+            socket.send(JSON.stringify(message));
+            showNotification(`传输请求已发送到 ${targetDeviceName}`);
+        }
+        
+        // 处理传输请求
+        function handleTransferRequest(message) {
+            currentTransferId = message.transferId;
+            sourceDeviceNameElement.textContent = message.sourceDeviceName;
+            fileNameElement.textContent = message.fileName;
+            fileSizeElement.textContent = formatSize(message.fileSize);
+            
+            // 存储文件信息
+            totalSize = message.fileSize;
+            
+            transferRequestElement.style.display = 'block';
+            showNotification(`收到来自 ${message.sourceDeviceName} 的文件传输请求`);
+        }
+        
+        // 处理传输响应
+        function handleTransferResponse(message) {
+            if (message.accepted) {
+                showNotification('传输请求已接受，开始发送文件...');
+                currentTransferId = message.transferId;
+                startFileSending();
+            } else {
+                showNotification('传输请求被拒绝');
+                resetSendState();
+            }
+        }
+        
+        // 处理文件元数据
+        function handleFileMetadata(message) {
+            // 保存传输ID
+            currentTransferId = message.transferId;
+            
+            // 准备接收文件
+            receivingFile = {
+                name: message.fileName,
+                size: message.fileSize,
+                type: message.fileType
+            };
+            
+            receivedChunks = [];
+            receivedSize = 0;
+            totalSize = message.fileSize;
+            transferStartTime = Date.now();
+            
+            // 显示进度
+            receiverProgressElement.style.display = 'block';
+            receiverBar.max = 100;
+            receiverBar.value = 0;
+        }
+        
+        // 开始发送文件
+        function startFileSending() {
+            if (!selectedFile) return;
+            
+            // 显示进度
+            progressContainer.style.display = 'block';
+            progressBar.max = 100;
+            progressBar.value = 0;
+            
+            // 发送文件元数据
+            const metadata = {
+                type: 'file_metadata',
+                transferId: currentTransferId,
+                fileName: selectedFile.name,
+                fileSize: selectedFile.size,
+                fileType: selectedFile.type
+            };
+            
+            socket.send(JSON.stringify(metadata));
+            
+            // 开始计时
+            transferStartTime = Date.now();
+            
+            // 开始发送分片
+            sendFileChunks(selectedFile, 0);
+        }
+        
+        // 发送文件分片
+        function sendFileChunks(file, offset) {
+            if (offset >= file.size) {
+                // 传输完成
+                showNotification('文件发送完成！');
+                progressBar.value = 100;
+                progressPercent.textContent = '100%';
+                transferSpeed.textContent = '';
+                return;
+            }
+            
+            const chunk = file.slice(offset, offset + CHUNK_SIZE);
+            socket.send(chunk);
+            
+            // 更新进度
+            const progress = Math.round((offset / file.size) * 100);
+            progressBar.value = progress;
+            progressPercent.textContent = `${progress}%`;
+            
+            // 计算速度
+            const elapsedTime = (Date.now() - transferStartTime) / 1000;
+            const speedBps = offset / elapsedTime;
+            transferSpeed.textContent = formatSpeed(speedBps);
+            
+            // 继续发送下一个分片
+            setTimeout(() => {
+                sendFileChunks(file, offset + CHUNK_SIZE);
+            }, 10);
+        }
+        
+        // 完成文件接收
+        function completeFileReceive() {
+            showNotification('文件接收完成！');
+            
+            // 隐藏传输速率
+            receiverSpeed.textContent = '';
+            
+            // 创建 Blob
+            const fileBlob = new Blob(receivedChunks, { type: receivingFile.type || 'application/octet-stream' });
+            
+            // 创建下载链接
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(fileBlob);
+            downloadLink.download = receivingFile.name;
+            downloadLink.style.display = 'none';
+            
+            // 触发下载
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // 重置状态
+            resetReceiveState();
+        }
+        
+        // 重置发送状态
+        function resetSendState() {
+            selectedFile = null;
+            fileInput.value = '';
+            progressContainer.style.display = 'none';
+            progressBar.value = 0;
+        }
+        
+        // 重置接收状态
+        function resetReceiveState() {
+            receivingFile = null;
+            receivedChunks = [];
+            receivedSize = 0;
+            totalSize = 0;
+            transferRequestElement.style.display = 'none';
+            receiverProgressElement.style.display = 'none';
+        }
+        
+        // 显示通知
+        function showNotification(message) {
+            notificationElement.textContent = message;
+            notificationElement.style.display = 'block';
+            
+            // 使用setTimeout确保CSS过渡效果正常工作
+            setTimeout(() => {
+                notificationElement.style.top = '20px';
+            }, 10);
+            
+            setTimeout(() => {
+                notificationElement.style.top = '-100px';
+                // 等待过渡效果完成后隐藏元素
+                setTimeout(() => {
+                    notificationElement.style.display = 'none';
+                }, 500);
+            }, 3000);
+        }
+        
+        // 格式化文件大小
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+        
+        // 格式化传输速度
+        function formatSpeed(bps) {
+            if (bps < 1024) return bps.toFixed(2) + ' B/s';
+            if (bps < 1024 * 1024) return (bps / 1024).toFixed(2) + ' KB/s';
+            return (bps / (1024 * 1024)).toFixed(2) + ' MB/s';
+        }
+        
+        // 处理传输错误
+        function handleTransferError(message) {
+            showNotification('传输错误: 接收方可能已断开连接');
+            resetSendState();
+        }
+        
+        // 事件监听器
+        fileInput.addEventListener('change', function() {
+            selectedFile = this.files[0];
+            if (selectedFile) {
+                showNotification(`已选择文件: ${selectedFile.name} (${formatSize(selectedFile.size)})`);
+            }
+        });
+        
+        sendButton.addEventListener('click', sendFileTransferRequest);
+        
+        document.getElementById('refresh-button').addEventListener('click', function() {
+            this.style.transform = 'rotate(360deg)';
+            showNotification('正在刷新设备列表...');
+            // 发送请求获取最新设备列表
+            const message = {
+                type: 'request_device_list'
+            };
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(message));
+            } else {
+                showNotification('连接已断开，请刷新页面');
+            }
+            // 重置旋转动画
+            setTimeout(() => {
+                this.style.transform = 'rotate(0deg)';
+            }, 1000);
+        });
+        
+        acceptButton.addEventListener('click', function() {
+            const response = {
+                type: 'transfer_response',
+                transferId: currentTransferId,
+                accepted: true
+            };
+            
+            socket.send(JSON.stringify(response));
+        });
+        
+        rejectButton.addEventListener('click', function() {
+            const response = {
+                type: 'transfer_response',
+                transferId: currentTransferId,
+                accepted: false
+            };
+            
+            socket.send(JSON.stringify(response));
+            resetReceiveState();
+        });
+        
+        // 初始化
+        window.onload = function() {
+            initWebSocket();
+            initInfoIcon();
+        };
+        
+        // 初始化信息图标
+        function initInfoIcon() {
+            const infoIcon = document.getElementById('info-icon');
+            const infoTooltip = document.getElementById('info-tooltip');
+            const ipAddressElement = document.getElementById('ip-address');
+            const wsPortElement = document.getElementById('ws-port');
+            const fullAddressElement = document.getElementById('full-address');
+            
+            // 获取当前主机名和端口
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+            
+            ipAddressElement.textContent = hostname;
+            wsPortElement.textContent = port || (protocol === 'https:' ? '443' : '80');
+            fullAddressElement.textContent = `${wsProtocol}//${hostname}${port ? ':'+port : ''}/file-transfer`;
+            
+            // 显示/隐藏提示框
+            infoIcon.addEventListener('mouseenter', function() {
+                infoTooltip.style.display = 'block';
+            });
+            
+            infoIcon.addEventListener('mouseleave', function() {
+                infoTooltip.style.display = 'none';
+            });
+        }
+    </script>
+</body>
+</html>
