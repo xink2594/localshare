@@ -1,6 +1,7 @@
 # LocalShare - 局域网文件共享系统
 
 <div align="center">
+
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen)
 ![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-blue)
